@@ -80,9 +80,13 @@ class Discriminator(nn.Module):
         self.output = nn.Linear(4*4*4*DIM, 1)
         self.DIM = DIM
 
-    def forward(self, input):
+    def forward(self, input, output_logits=False):
         input = input.view(-1, 1, 28, 28)
-        out = self.main(input)
-        out = out.view(-1, 4*4*4*self.DIM)
-        out = self.output(out)
-        return out.view(-1)
+        output = self.main(input)
+        if not output_logits:
+            output = output.view(-1, 4*4*4*self.DIM)
+            output = self.output(output)
+            return output
+        else:
+            output_logits = output.view(-1, 4*4*4*self.DIM)
+            return output_logits

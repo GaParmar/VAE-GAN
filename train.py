@@ -8,7 +8,7 @@ from utils.common import *
 from utils.gradient import *
 from utils.visualizations import *
 
-exp_name = sys.argv[1]
+exp_name = sys.argv[1] + "_baseline2"
 C = importlib.import_module(f"configs.{sys.argv[1]}")
 
 # import the models based on image resolution
@@ -88,8 +88,11 @@ for epoch in range(C.num_epochs):
         mu, logvar = mu_logvar[:,0:C.zdim], mu_logvar[:,C.zdim:]
         z = reparametrize(mu, logvar)
         x_rec = netG(z)
-        recon_loss = torch.nn.BCEWithLogitsLoss()(x_rec.view(batch_size,-1), x_in.view(batch_size,-1)).mean()*C.lambda_recon
-        recon_loss.backward()
+        feat_x_rec = netD(x_rec, True)
+        feat_x_in = netD(x_in, True)
+        recon_loss = torch.nn.MSELoss(reduction="sum")\
+                            (feat_x_rec.view(batch_size,-1),\
+                             feat_x_in.view(batch_size,-1))*C.lambda_reconrecon_loss.backward()
         optimizerE.step()
         optimizerG.step()
 
