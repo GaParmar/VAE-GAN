@@ -8,7 +8,7 @@ from utils.common import *
 from utils.gradient import *
 from utils.visualizations import *
 
-exp_name = sys.argv[1]
+exp_name = sys.argv[1]+"_baseline1"
 C = importlib.import_module(f"configs.{sys.argv[1]}")
 
 # import the models based on image resolution
@@ -47,51 +47,30 @@ for n in C.loss_names:
 for epoch in range(C.num_epochs):
     for idx, batch_data in enumerate(DL, 0):
         batch_size = batch_data[0].shape[0]
-        for d_iter in range(C.NUM_DISC_STEPS):
-            x_in = batch_data[0].to(device)
-            batch_size = x_in.shape[0]
-            netD.zero_grad()
-            # train with real
-            D_real = netD(x_in).mean()
-            label = torch.ones((batch_size)).to(device)*-1
-            # D_real.backward(label)
-            # train with fake
-            noise = torch.randn(batch_size, 128).to(device)
-            fake = netG(noise)
-            D_fake = netD(fake.detach()).mean()
-            label = torch.ones((batch_size)).to(device)
-            # D_fake.backward(label)
-            # train with gradient penalty
-            gradient_penalty = calc_gradient_penalty(netD, x_in, fake)
-            # gradient_penalty.backward()
-            D_cost = D_fake - D_real + gradient_penalty
-            D_cost.backward()
-            Wasserstein_D = D_real - D_fake
-            optimizerD.step()
+        x_in = batch_data[0].to(device)
         
-        
-        # (2) Update G network
-        netG.zero_grad()
-        noise = torch.randn(batch_size, 128).to(device)
-        fake = netG(noise)
-        G = netD(fake).mean()
-        label = torch.ones((batch_size)).to(device)
-        # G.backward(label)
-        G_cost = -G
-        G_cost.backward()
-        optimizerG.step()
 
         ## (3) reconstruction loss
         optimizerG.zero_grad()
         optimizerE.zero_grad()
+        optimizerD.zero_grad()
         mu_logvar = netE(x_in)
         mu, logvar = mu_logvar[:,0:C.zdim], mu_logvar[:,C.zdim:]
         z = reparametrize(mu, logvar)
         x_rec = netG(z)
-        recon_loss = torch.nn.BCEWithLogitsLoss()(x_rec.view(batch_size,-1), x_in.view(batch_size,-1)).mean()*C.lambda_recon
+        feat_x_rec = netD(x_rec, True)
+        feat_x_in = netD(x_in, True)
+        recon_loss = torch.nn.MSELoss(reduction="sum")\
+                            (feat_x_rec.view(batch_size,-1),\
+                             feat_x_in.view(batch_size,-1))*C.lambda_recon
         recon_loss.backward()
         optimizerE.step()
         optimizerG.step()
+        optimizerD.step()
+
+        with torch.no_grad():
+            noise = torch.randn(batch_size, C.zdim).to(device)
+            fake = netG(noise)
 
 
         # the logs
