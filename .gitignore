@@ -1,2 +1,6 @@
 output/*
 data/*
+*.pyc
+**.pyc
+networks/__pycache__/*
+configs/__pycache__/*
