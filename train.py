@@ -8,7 +8,7 @@ from utils.common import *
 from utils.gradient import *
 from utils.visualizations import *
 
-exp_name = sys.argv[1]+"_baseline1"
+exp_name = "baseline1_"+sys.argv[1]
 C = importlib.import_module(f"configs.{sys.argv[1]}")
 
 # import the models based on image resolution
