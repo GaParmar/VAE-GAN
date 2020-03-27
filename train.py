@@ -8,7 +8,7 @@ from utils.common import *
 from utils.gradient import *
 from utils.visualizations import *
 
-exp_name = sys.argv[1] + "_baseline2"
+exp_name = "baseline2_"+sys.argv[1]
 C = importlib.import_module(f"configs.{sys.argv[1]}")
 
 # import the models based on image resolution
@@ -90,9 +90,10 @@ for epoch in range(C.num_epochs):
         x_rec = netG(z)
         feat_x_rec = netD(x_rec, True)
         feat_x_in = netD(x_in, True)
-        recon_loss = torch.nn.MSELoss(reduction="sum")\
+        recon_loss = torch.nn.MSELoss(reduction="mean")\
                             (feat_x_rec.view(batch_size,-1),\
-                             feat_x_in.view(batch_size,-1))*C.lambda_reconrecon_loss.backward()
+                             feat_x_in.view(batch_size,-1))*C.lambda_recon
+        recon_loss.backward()
         optimizerE.step()
         optimizerG.step()
 
@@ -118,5 +119,6 @@ for epoch in range(C.num_epochs):
     # save model
     if (epoch % 10) == 0:
         path = f"output/saved_models/{exp_name}/"
+        torch.save(netE.state_dict(), path+f"netE_{epoch}.pth")
         torch.save(netG.state_dict(), path+f"netG_{epoch}.pth")
         torch.save(netD.state_dict(), path+f"netD_{epoch}.pth")
