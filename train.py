@@ -115,5 +115,6 @@ for epoch in range(C.num_epochs):
     # save model
     if (epoch % 10) == 0:
         path = f"output/saved_models/{exp_name}/"
+        torch.save(netE.state_dict(), path+f"netE_{epoch}.pth")
         torch.save(netG.state_dict(), path+f"netG_{epoch}.pth")
         torch.save(netD.state_dict(), path+f"netD_{epoch}.pth")
